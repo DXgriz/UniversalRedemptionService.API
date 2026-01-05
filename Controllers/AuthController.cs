@@ -6,7 +6,7 @@ namespace UniversalRedemptionService.API.Controllers
 {
     [ApiController]
     [Route("api/auth")]
-    public class AuthController(AuthService authService) : Controller
+    public class AuthController(AuthService authService) : ControllerBase
     {
         private readonly AuthService _authService = authService;
 

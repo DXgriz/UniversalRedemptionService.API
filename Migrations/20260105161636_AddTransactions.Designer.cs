@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using UniversalRedemptionService.API.Data;
 
@@ -11,9 +12,11 @@ using UniversalRedemptionService.API.Data;
 namespace UniversalRedemptionService.API.Migrations
 {
     [DbContext(typeof(SLUCRSDbContext))]
-    partial class SLUCRSDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260105161636_AddTransactions")]
+    partial class AddTransactions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -82,10 +85,7 @@ namespace UniversalRedemptionService.API.Migrations
 
                     b.Property<string>("Reference")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("ToWalletId")
                         .HasColumnType("int");
@@ -99,9 +99,6 @@ namespace UniversalRedemptionService.API.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("FromWalletId");
-
-                    b.HasIndex("Reference")
-                        .IsUnique();
 
                     b.HasIndex("ToWalletId");
 

@@ -28,6 +28,10 @@ namespace UniversalRedemptionService.API.Data
 
             // Transactions
             modelBuilder.Entity<Transaction>().Property(t => t.Amount).HasPrecision(18, 2);
+            modelBuilder.Entity<Transaction>().HasOne(t => t.FromWallet).WithMany().HasForeignKey(t => t.FromWalletId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Transaction>().HasOne(t => t.ToWallet).WithMany().HasForeignKey(t => t.ToWalletId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Transaction>().HasIndex(t => t.Reference).IsUnique();
+
 
             // Cash Send Redemptions
             modelBuilder.Entity<CashSendRedemption>().Property(r => r.Amount).HasPrecision(18, 2);
