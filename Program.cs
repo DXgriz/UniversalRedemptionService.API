@@ -3,8 +3,12 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Text;
+using System.Threading.RateLimiting;
 using UniversalRedemptionService.API.Data;
+using UniversalRedemptionService.API.Middleware;
+using UniversalRedemptionService.API.Providers;
 using UniversalRedemptionService.API.Services;
+
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,6 +47,63 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 //Dependency Injection for Services
 builder.Services.AddScoped<AuthService>();
 
+//Rate Limiting Configuration
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+    options.AddPolicy("auth-policy", context =>
+    {
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ip,
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 10,              // 10 auth attempts
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+
+
+    //Per authenticated user (JWT)
+    options.AddPolicy("user-policy", context =>
+    {
+        var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                    ?? context.Connection.RemoteIpAddress?.ToString()
+                    ?? "anonymous";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: userId,
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 30,           // 30 requests
+                Window = TimeSpan.FromMinutes(1),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            });
+    });
+
+    //Per IP (extra safety)
+    options.AddPolicy("ip-policy", context =>
+    {
+        var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+        return RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: ip,
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 100,          // 100 requests
+                Window = TimeSpan.FromMinutes(1)
+            });
+    });
+});
+
+//Dependency Injection for Providers
+builder.Services.AddScoped<ICashSendProvider, MockCashSendProvider>();
+
 
 var app = builder.Build();
 
@@ -57,8 +118,15 @@ app.UseHttpsRedirection();
 
 app.UseRouting();
 
+app.UseAuthentication();
+
+app.UseMiddleware<ExceptionHandler>();
+app.UseMiddleware<ResponseEnvelope>();
+
+app.UseRateLimiter();
+
 app.UseAuthorization();
 
-app.MapControllers();
+app.MapControllers().RequireRateLimiting("user-policy");
 
 app.Run();

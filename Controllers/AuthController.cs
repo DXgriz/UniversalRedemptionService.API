@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using UniversalRedemptionService.API.DTOs;
 using UniversalRedemptionService.API.Services;
 
 namespace UniversalRedemptionService.API.Controllers
 {
+    [EnableRateLimiting("auth-policy")]
     [ApiController]
-    [Route("api/auth")]
+    [Route("api/[controller]")]
     public class AuthController(AuthService authService) : ControllerBase
     {
         private readonly AuthService _authService = authService;

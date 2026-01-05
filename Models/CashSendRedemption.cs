@@ -13,7 +13,7 @@
         public bool IsRedeemed { get; set; } = false;
         public DateTime? RedeemedAt { get; set; }
 
-        public int WalletId { get; set; }
-        public Wallet Wallet { get; set; } = null!;
+        public int? WalletId { get; set; }
+        public Wallet? Wallet { get; set; } = null!;
     }
 }
