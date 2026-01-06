@@ -1,20 +1,26 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Security.Claims;
 using UniversalRedemptionService.API.DTOs;
 using UniversalRedemptionService.API.Services;
 
 namespace UniversalRedemptionService.API.Controllers
 {
+    [EnableRateLimiting("user-policy")]
     [ApiController]
-    [Route("api/redemptions")]
+    [Route("api/[controller]")]
     [Authorize]
     public class RedemptionController(RedemptionService service) : ControllerBase
     {
         [HttpPost("redeem")]
-        public async Task<IActionResult> Redeem(RedeemCashSendDto dto)
+        public async Task<IActionResult> Redeem([FromBody] RedeemCashSendDto dto)
         {
-            var userId = int.Parse(User.FindFirst("userId")!.Value);
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
+            //var userId = int.Parse(User.FindFirst("userId")!.Value);
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
             await service.RedeemAsync(userId, dto);
 
             return Ok(new

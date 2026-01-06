@@ -71,12 +71,9 @@ builder.Services.AddRateLimiter(options =>
     //Per authenticated user (JWT)
     options.AddPolicy("user-policy", context =>
     {
-        var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
-                    ?? context.Connection.RemoteIpAddress?.ToString()
-                    ?? "anonymous";
+        var userId = context.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value?? context.Connection.RemoteIpAddress?.ToString()?? "anonymous";
 
-        return RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: userId,
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey: userId,
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 30,           // 30 requests
@@ -91,8 +88,7 @@ builder.Services.AddRateLimiter(options =>
     {
         var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
 
-        return RateLimitPartition.GetFixedWindowLimiter(
-            partitionKey: ip,
+        return RateLimitPartition.GetFixedWindowLimiter(partitionKey: ip,
             factory: _ => new FixedWindowRateLimiterOptions
             {
                 PermitLimit = 100,          // 100 requests
