@@ -12,7 +12,7 @@ namespace UniversalRedemptionService.API.Controllers
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class TransactionController(TransactionService transactionService, SLUCRSDbContext context) : ControllerBase
+    public class TransactionController(TransactionService transactionService, SLUCRSDbContext context, TransactionExportService exportService) : ControllerBase
     {
         [HttpGet]
         public async Task<IActionResult> GetTransactions([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -50,22 +50,8 @@ namespace UniversalRedemptionService.API.Controllers
         [HttpGet("export/csv")]
         public async Task<IActionResult> ExportCsv([FromQuery] TransactionQueryDto query)
         {
-            query.PageSize = 10000;
-            query.Page = 1;
-
-            var result = await transactionService.QueryTransactionsAsync(null, query);
-
-            var csv = new StringBuilder();
-            csv.AppendLine("Id,Amount,Type,Reference,Date");
-
-            foreach (var t in result.Items)
-            {
-                csv.AppendLine($"{t.Id},{t.Amount},{t.Type},{t.Reference},{t.CreatedAt}");
-            }
-
-            return File(Encoding.UTF8.GetBytes(csv.ToString()), "text/csv","transactions.csv");
+            var file = await exportService.ExportCsvAsync(null, query);
+            return File(file, "text/csv", "transactions.csv");
         }
-
-
     }
 }

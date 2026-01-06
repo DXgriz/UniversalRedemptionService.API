@@ -46,6 +46,15 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 //Dependency Injection for Services
 builder.Services.AddScoped<AuthService>();
+builder.Services.AddScoped<TransactionService>();
+builder.Services.AddScoped<TransactionExportService>();
+builder.Services.AddScoped<MerchantPaymentService>();
+builder.Services.AddScoped<TransactionStatsService>();
+
+//Dependency Injection for Providers
+builder.Services.AddScoped<ICashSendProvider, MockCashSendProvider>();
+
+
 
 //Rate Limiting Configuration
 builder.Services.AddRateLimiter(options =>
@@ -96,9 +105,6 @@ builder.Services.AddRateLimiter(options =>
             });
     });
 });
-
-//Dependency Injection for Providers
-builder.Services.AddScoped<ICashSendProvider, MockCashSendProvider>();
 
 
 var app = builder.Build();
