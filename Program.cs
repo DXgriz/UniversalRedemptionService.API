@@ -50,11 +50,11 @@ builder.Services.AddScoped<TransactionService>();
 builder.Services.AddScoped<TransactionExportService>();
 builder.Services.AddScoped<MerchantPaymentService>();
 builder.Services.AddScoped<TransactionStatsService>();
+builder.Services.AddScoped<UserService>();
+
 
 //Dependency Injection for Providers
 builder.Services.AddScoped<ICashSendProvider, MockCashSendProvider>();
-
-
 
 //Rate Limiting Configuration
 builder.Services.AddRateLimiter(options =>
@@ -75,7 +75,6 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             });
     });
-
 
     //Per authenticated user (JWT)
     options.AddPolicy("user-policy", context =>

@@ -11,7 +11,8 @@
         public string Role { get; set; } = "User";
         public bool IsMerchant { get; set; } = false;
 
-
+        public string? RefreshToken { get; set; }
+        public DateTime? RefreshTokenExpiry { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

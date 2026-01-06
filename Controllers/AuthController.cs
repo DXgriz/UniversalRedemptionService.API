@@ -10,19 +10,25 @@ namespace UniversalRedemptionService.API.Controllers
     [Route("api/[controller]")]
     public class AuthController(AuthService authService) : ControllerBase
     {
-        private readonly AuthService _authService = authService;
 
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequestDto dto)
         {
-            var token = await _authService.RegisterAsync(dto);
+            var token = await authService.RegisterAsync(dto);
             return Ok(new { token });
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequestDto dto)
         {
-            var token = await _authService.LoginAsync(dto);
+            var token = await authService.LoginAsync(dto);
+            return Ok(new { token });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] string refreshToken)
+        {
+            var token = await authService.RefreshTokenAsync(refreshToken);
             return Ok(new { token });
         }
     }

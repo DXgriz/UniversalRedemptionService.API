@@ -1,6 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -22,7 +21,9 @@ namespace UniversalRedemptionService.API.Services
                 FullName = dto.FullName,
                 Email = dto.Email,
                 PhoneNumber = dto.PhoneNumber,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                RefreshToken = GenerateRefreshToken(),
+                RefreshTokenExpiry = DateTime.UtcNow.AddDays(7)
             };
 
             var wallet = new Wallet { User = user };
@@ -42,7 +43,28 @@ namespace UniversalRedemptionService.API.Services
             if (user == null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.PasswordHash))
                 throw new Exception("Invalid credentials");
 
+            user.RefreshToken = GenerateRefreshToken();
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+
+            await context.SaveChangesAsync();
+
             return GenerateJwtToken(user);
+        }
+
+        public async Task<string> RefreshTokenAsync(string refreshToken)
+        {
+            var user = await context.Users.FirstOrDefaultAsync(u =>u.RefreshToken == refreshToken &&u.RefreshTokenExpiry > DateTime.UtcNow) ?? throw new Exception("Invalid refresh token");
+            user.RefreshToken = GenerateRefreshToken();
+            user.RefreshTokenExpiry = DateTime.UtcNow.AddDays(7);
+
+            await context.SaveChangesAsync();
+
+            return GenerateJwtToken(user);
+        }
+
+        private static string GenerateRefreshToken()
+        {
+            return Convert.ToBase64String(Guid.NewGuid().ToByteArray());
         }
 
         private string GenerateJwtToken(User user)
@@ -51,10 +73,10 @@ namespace UniversalRedemptionService.API.Services
 
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), //for rate limiting & identity
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(ClaimTypes.Role, user.Role ?? "User") //RBAC
+                new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new(JwtRegisteredClaimNames.Email, user.Email),
+                new(ClaimTypes.Role, user.Role ?? "User")
             };
 
             var key = new SymmetricSecurityKey(
@@ -73,6 +95,5 @@ namespace UniversalRedemptionService.API.Services
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
     }
 }
